@@ -1,0 +1,14 @@
+services:
+  claude-code-configuration-development:
+    build: .
+    image: futureys/python-development:local
+    volumes:
+      - .:/workspace:cached
+      - /workspace/.venv
+      - ~/.claude:/root/.claude
+      - ~/.claude.json:/root/.claude.json
+      # - Using uv in Docker | uv
+      #   https://docs.astral.sh/uv/guides/integration/docker/#caching
+      - uv-cache:/root/.cache/uv
+volumes:
+  uv-cache:
