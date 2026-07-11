@@ -1,6 +1,11 @@
 services:
   claude-code-configuration-development:
-    build: .
+    build:
+      args:
+        DOCKER_IMAGE_TAG_NODE: ${DOCKER_IMAGE_TAG_NODE:?err}
+        VERSION_CLAUDE_CODE: ${VERSION_CLAUDE_CODE:?err}
+        VERSION_UV: ${VERSION_UV:?err}
+      context: .
     image: futureys/python-development:local
     volumes:
       - .:/workspace:cached
