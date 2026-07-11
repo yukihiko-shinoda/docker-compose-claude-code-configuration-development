@@ -21,3 +21,15 @@ RUN mkdir -p /etc/apt/keyrings \
     gh/stable \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+# skill-validator: lints Claude Code skill SKILL.md files (frontmatter, structure, tokens)
+# Releases: https://github.com/agent-ecosystem/skill-validator/releases
+# NOTE: version bump is manual -- Dependabot does not track this binary
+ARG SKILL_VALIDATOR_VERSION=1.5.6
+RUN arch=$(dpkg --print-architecture) \
+ && tmp=$(mktemp -d) \
+ && wget -nv -P "$tmp" "https://github.com/agent-ecosystem/skill-validator/releases/download/v${SKILL_VALIDATOR_VERSION}/skill-validator_${SKILL_VALIDATOR_VERSION}_linux_${arch}.tar.gz" \
+ && wget -nv -P "$tmp" "https://github.com/agent-ecosystem/skill-validator/releases/download/v${SKILL_VALIDATOR_VERSION}/skill-validator_${SKILL_VALIDATOR_VERSION}_checksums.txt" \
+ && (cd "$tmp" && sha256sum --check --ignore-missing "skill-validator_${SKILL_VALIDATOR_VERSION}_checksums.txt") \
+ && tar -xzf "$tmp/skill-validator_${SKILL_VALIDATOR_VERSION}_linux_${arch}.tar.gz" -C "$tmp" skill-validator \
+ && install -m 755 "$tmp/skill-validator" /usr/local/bin/skill-validator \
+ && rm -rf "$tmp"
