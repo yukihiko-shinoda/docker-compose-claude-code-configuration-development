@@ -3,10 +3,7 @@ ARG DOCKER_IMAGE_TAG_NODE=26.5.0-trixie-slim \
 FROM ghcr.io/astral-sh/uv:${VERSION_UV} AS uv
 FROM node:${DOCKER_IMAGE_TAG_NODE}
 ARG VERSION_CLAUDE_CODE=stable
-# markdownlint-cli2: lints Markdown files
-# Releases: https://github.com/DavidAnson/markdownlint-cli2/releases
-# NOTE: version bump is manual -- Dependabot does not track global npm installs
-ARG VERSION_MARKDOWNLINT_CLI2=0.23.0
+ARG VERSION_CSKLINT
 WORKDIR /workspace
 COPY --from=uv /uv /uvx /bin/
 # - Using uv in Docker | uv
@@ -76,22 +73,14 @@ RUN mkdir -p /etc/apt/keyrings \
     gh/stable \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-# skill-validator: lints Claude Code skill SKILL.md files (frontmatter, structure, tokens)
-# Releases: https://github.com/agent-ecosystem/skill-validator/releases
-# NOTE: version bump is manual -- Dependabot does not track this binary
-ARG SKILL_VALIDATOR_VERSION=1.5.6
-# Reason:
-# - DL3003: To omit layer caching for the skill-validator installation, we use a temporary directory to download and extract the binary. This ensures that we always get the latest version of skill-validator when building the Docker image, rather than relying on potentially outdated cached layers.
-# - DL4001: To follow the official installation instructions for GitHub CLI, we need to add the GPG key and repository. This is necessary to ensure that we are installing the latest version of GitHub CLI from the official source, rather than relying on potentially outdated versions in the default package repositories.
-# hadolint ignore=DL3003,DL4001
-RUN arch=$(dpkg --print-architecture) \
- && tmp=$(mktemp -d) \
- && wget -nv -P "$tmp" "https://github.com/agent-ecosystem/skill-validator/releases/download/v${SKILL_VALIDATOR_VERSION}/skill-validator_${SKILL_VALIDATOR_VERSION}_linux_${arch}.tar.gz" \
- && wget -nv -P "$tmp" "https://github.com/agent-ecosystem/skill-validator/releases/download/v${SKILL_VALIDATOR_VERSION}/skill-validator_${SKILL_VALIDATOR_VERSION}_checksums.txt" \
- && (cd "$tmp" && sha256sum --check --ignore-missing "skill-validator_${SKILL_VALIDATOR_VERSION}_checksums.txt") \
- && tar -xzf "$tmp/skill-validator_${SKILL_VALIDATOR_VERSION}_linux_${arch}.tar.gz" -C "$tmp" skill-validator \
- && install -m 755 "$tmp/skill-validator" /usr/local/bin/skill-validator \
- && rm -rf "$tmp"
-RUN npm install -g "markdownlint-cli2@${VERSION_MARKDOWNLINT_CLI2}"
+# csklint: installs and runs the linters for Claude Code skills:
+# - skill-validator (pinned inside csklint; 0.1.0 pins 1.5.6, with SHA-256 verification)
+# - markdownlint-cli2 (installed via npm, unpinned -- latest at build time)
+# `uv tool install` also provisions a uv-managed Python (no system python3 in this image)
+# and puts the `csklint` shim in /root/.local/bin, which is already on PATH.
+# PyPI: https://pypi.org/project/csklint/
+# NOTE: version bump is manual -- Dependabot does not track uv tool installs
+RUN uv tool install "csklint==${VERSION_CSKLINT}" \
+ && csklint install
 ENTRYPOINT [ "uv", "run" ]
 CMD ["pytest"]

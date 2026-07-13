@@ -5,6 +5,7 @@ services:
         DOCKER_IMAGE_TAG_NODE: ${DOCKER_IMAGE_TAG_NODE:?err}
         VERSION_CLAUDE_CODE: ${VERSION_CLAUDE_CODE:?err}
         VERSION_UV: ${VERSION_UV:?err}
+        VERSION_CSKLINT: ${VERSION_CSKLINT:?err}
       context: .
     image: futureys/python-development:local
     volumes:

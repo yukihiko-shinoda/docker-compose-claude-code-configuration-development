@@ -44,10 +44,16 @@ The Node tag, uv version, and Claude Code version are all Dockerfile `ARG`s with
 `compose.yml` re-declares them as *required* build args (`${VAR:?err}`) sourced from the shell
 environment — so a compose build needs an `.env` file (or exported vars) setting
 `DOCKER_IMAGE_TAG_NODE`, `VERSION_UV`, and `VERSION_CLAUDE_CODE`, even though the Dockerfile alone
-would build fine without one. Claude Code is installed via the native installer, plus `git`, GitHub
-CLI (`gh`), a version-pinned `skill-validator` binary, and `markdownlint-cli2` installed globally via
-npm (lints `SKILL.md` and Markdown files respectively; version bumps for both are manual, not
-tracked by Dependabot). The former `futureys/claude-code-python-development` base image is no longer
+would build fine without one. Claude Code is installed via the native installer, plus `git` and
+GitHub CLI (`gh`). The skill linters — `skill-validator` (lints `SKILL.md`) and `markdownlint-cli2`
+(lints Markdown) — are installed by `csklint` (<https://pypi.org/project/csklint/>), itself installed
+as a pinned `uv tool install "csklint==${VERSION_CSKLINT}"` (which also provisions a uv-managed
+Python, since the image has no system python3) followed by `csklint install`. csklint pins
+skill-validator internally (0.1.0 pins 1.5.6, with checksum verification) but installs
+markdownlint-cli2 unpinned (latest at build time). The csklint version bump is manual — not tracked
+by Dependabot and deliberately not a compose-required build arg. `csklint run` is also available at
+runtime to lint the skills under `~/.claude/skills`. The former
+`futureys/claude-code-python-development` base image is no longer
 used — its settings (WORKDIR, `UV_LINK_MODE`, apt packages, SHELL, PATH, native Claude Code install,
 `DISABLE_AUTOUPDATER`, ENTRYPOINT/CMD) are replicated verbatim in this repo's `Dockerfile`, which is
 now self-contained. Key volume mounts in `compose.yml`:
