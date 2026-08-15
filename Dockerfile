@@ -1,4 +1,4 @@
-FROM futureys/claude-code-python-development:20260726122500
+FROM futureys/claude-code-python-development:20260805201500
 ARG VERSION_CSKLINT
 RUN apt-get update && apt-get install --no-install-recommends -y \
     git/stable \
