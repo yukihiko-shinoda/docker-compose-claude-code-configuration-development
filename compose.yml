@@ -2,7 +2,9 @@ services:
   claude-code-configuration-development:
     build:
       args:
-        VERSION_CSKLINT: ${VERSION_CSKLINT:?err}
+        # - csklint · PyPI
+        #   https://pypi.org/project/csklint/
+        VERSION_CSKLINT: 0.3.0
       context: .
     image: futureys/python-development:local
     volumes:
