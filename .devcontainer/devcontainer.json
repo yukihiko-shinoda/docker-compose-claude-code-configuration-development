@@ -38,23 +38,23 @@
 		"vscode": {
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"anthropic.claude-code@2.1.201",
+				"anthropic.claude-code",
 				"GitHub.copilot-chat",
-				"streetsidesoftware.code-spell-checker@4.5.6",
-				"mhutchie.git-graph@1.30.0",
-				"eamodio.gitlens@17.9.0",
-				"DavidAnson.vscode-markdownlint@0.61.2",
-				"github.vscode-github-actions@0.32.0",
-				"tamasfe.even-better-toml@0.21.2",
-				"charliermarsh.ruff@2026.48.0",
-				"ms-python.python@2026.4.0",
-				"ms-python.flake8@2026.6.0",
-				"ms-python.mypy-type-checker@2026.6.0",
-				"ms-python.pylint@2026.4.0",
-				"pycqa.bandit-pycqa@2025.14.0",
-				"emeraldwalk.RunOnSave@1.0.3",
-				"kuscamara.yamllint-fix@1.1.0",
-				"redhat.vscode-yaml@1.23.0"
+				"streetsidesoftware.code-spell-checker",
+				"mhutchie.git-graph",
+				"eamodio.gitlens",
+				"DavidAnson.vscode-markdownlint",
+				"github.vscode-github-actions",
+				"tamasfe.even-better-toml",
+				"charliermarsh.ruff",
+				"ms-python.python",
+				"ms-python.flake8",
+				"ms-python.mypy-type-checker",
+				"ms-python.pylint",
+				"pycqa.bandit-pycqa",
+				"emeraldwalk.RunOnSave",
+				"kuscamara.yamllint-fix",
+				"redhat.vscode-yaml"
 			],
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
