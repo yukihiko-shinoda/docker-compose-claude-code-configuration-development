@@ -8,11 +8,10 @@
       "Bash(uv run invoke style*)",
       "Bash(uv run invoke test*)",
       "Bash(uv run pytest*)"
-    ],
-    "deny": [
-      "Bash(git push main*)",
-      "Bash(rm:*)",
-      "Read(**/.env)"
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "enableWeakerNestedSandbox": true
   }
 }

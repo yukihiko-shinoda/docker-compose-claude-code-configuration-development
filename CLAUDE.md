@@ -30,6 +30,7 @@ uv run invoke path
 ```
 
 To run a single test:
+
 ```bash
 uv run pytest tests/path/to/test_file.py::TestClass::test_method
 ```
@@ -38,28 +39,34 @@ uv run pytest tests/path/to/test_file.py::TestClass::test_method
 
 ### Container setup (`Dockerfile` + `compose.yml`)
 
-Built directly `FROM node:${DOCKER_IMAGE_TAG_NODE}` (Node is needed for npm-installed tooling), with
-`uv`/`uvx` copied in from the pinned `ghcr.io/astral-sh/uv` image via multi-stage `COPY --from`.
-The Node tag, uv version, and Claude Code version are all Dockerfile `ARG`s with defaults, but
-`compose.yml` re-declares them as *required* build args (`${VAR:?err}`) sourced from the shell
-environment — so a compose build needs an `.env` file (or exported vars) setting
-`DOCKER_IMAGE_TAG_NODE`, `VERSION_UV`, and `VERSION_CLAUDE_CODE`, even though the Dockerfile alone
-would build fine without one. Claude Code is installed via the native installer, plus `git` and
-GitHub CLI (`gh`). The skill linters — `skill-validator` (lints `SKILL.md`) and `markdownlint-cli2`
-(lints Markdown) — are installed by `csklint` (<https://pypi.org/project/csklint/>), itself installed
-as a pinned `uv tool install "csklint==${VERSION_CSKLINT}"` (which also provisions a uv-managed
-Python, since the image has no system python3) followed by `csklint install`. csklint pins
-skill-validator internally (0.1.0 pins 1.5.6, with checksum verification) but installs
-markdownlint-cli2 unpinned (latest at build time). The csklint version bump is manual — not tracked
-by Dependabot and deliberately not a compose-required build arg. `csklint run` is also available at
-runtime to lint the skills under `~/.claude/skills`. The former
-`futureys/claude-code-python-development` base image is no longer
-used — its settings (WORKDIR, `UV_LINK_MODE`, apt packages, SHELL, PATH, native Claude Code install,
-`DISABLE_AUTOUPDATER`, ENTRYPOINT/CMD) are replicated verbatim in this repo's `Dockerfile`, which is
-now self-contained. Key volume mounts in `compose.yml`:
+Built `FROM futureys/claude-code-python-development:<tag>`, a maintained base image (already carrying
+Node, `uv`/`uvx`, git, GitHub CLI, and the native Claude Code install) whose tag is bumped by
+Dependabot's `docker` ecosystem check. On top of that base, the Dockerfile only adds the skill
+linters: `csklint` (<https://pypi.org/project/csklint/>) is installed as a pinned
+`uv tool install "csklint==${VERSION_CSKLINT}"` followed by `csklint install`, which provisions
+`skill-validator` (pinned internally, with checksum verification) and `markdownlint-cli2` (installed
+via npm, unpinned — latest at build time). The csklint version bump is manual — not tracked by
+Dependabot. `csklint run` is also available at runtime to lint the skills under `~/.claude/skills`.
+`compose.yml` passes `VERSION_CSKLINT` as a plain build arg (currently `0.3.0`) rather than requiring
+it from a shell-sourced `.env` file, so — unlike the version-pinning scheme this repo used
+previously — a compose build needs no `.env` for the image tag or `csklint` version.
+
+`entrypoint.sh` is copied into the image as `/usr/local/bin/entrypoint` and set as `ENTRYPOINT`
+(`CMD` is `uv run pytest`). It runs `uvx hol-guard install claude-code` before `exec`-ing the
+container's command, so every container start (re-)installs HOL Guard's Claude Code integration
+before anything else runs.
+
+`compose.yml` grants `cap_add: SYS_ADMIN` and `security_opt: seccomp:unconfined` so that Claude
+Code's own Bash sandbox (which uses bubblewrap) can create the namespaces it needs from inside this
+already-containerized environment — see the comment above those keys in `compose.yml`, and
+[containers/bubblewrap#505](https://github.com/containers/bubblewrap/issues/505) for cases where even
+a long capability list still falls short of `--privileged`. It also declares a Docker secret,
+`slack_webhook_url`, sourced from the host's `SLACK_WEBHOOK_URL` environment variable (Compose's
+`secrets: <name>: environment:` form) — this keeps the Slack webhook used by `~/.claude`'s
+notification hook out of the read-write `~/.claude` bind mount. Key volume mounts:
 
 | Mount | Purpose |
-|---|---|
+| --- | --- |
 | `.:/workspace` | This infrastructure repo |
 | `~/.claude:/root/.claude` | The config project being developed |
 | `~/.claude.json:/root/.claude.json` | Claude Code auth |
@@ -78,12 +85,15 @@ On save, Python files are auto-formatted and import-sorted by Ruff, and addition
 `uv run docformatter --in-place` via a `RunOnSave` rule. The Bandit extension reads its config from
 `pyproject.toml` (`--configfile pyproject.toml`) — that file lives in `~/.claude`, not this repo.
 
-### Permissions (`.claude/settings.json`)
+### Permissions and sandbox (`.claude/settings.json`)
 
 - **Allowed**: `uv run invoke <clean|dist|lint|path|style|test>*`, `uv run pytest*`
-- **Denied**: `git push main*`, `rm:*`, `Read(**/.env)`
+- **`sandbox`**: `{"enabled": true, "enableWeakerNestedSandbox": true}` — Claude Code's built-in Bash
+  sandbox is turned on inside the container, paired with the `cap_add`/`security_opt` grants in
+  `compose.yml` above that make bubblewrap usable there. There is no `permissions.deny` list — the
+  sandbox is now the guardrail in place of the deny rules this repo used previously.
 
 ### Dependabot
 
-Configured in `.github/dependabot.yml` to check for devcontainer and Docker (`FROM` tags: node, uv)
-updates weekly.
+Configured in `.github/dependabot.yml` to check the `devcontainers`, `docker` (the Dockerfile's
+`FROM` tag), `docker-compose`, `github-actions`, and `uv` ecosystems weekly, all rooted at `/`.
