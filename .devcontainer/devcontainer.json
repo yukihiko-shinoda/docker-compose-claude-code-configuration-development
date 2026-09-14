@@ -34,6 +34,11 @@
 	// "postCreateCommand": "cat /etc/os-release",
 
 	"initializeCommand": {
+		// Runs on the host, before the container is created/rebuilt:
+		// - gcp-agent-key.sh: ensures a static claude-code service account JSON key
+		//   exists on the host. This key never expires,
+		//   so the script only creates it once and no-ops on every later run.
+		"gcp-agent-key": "${localWorkspaceFolder}/gcp-agent-key.sh",
 		// Use the 1Password CLI to generate a .env file with secrets:
 		// - Launch a dev container using current process' environment · Issue #9339 · microsoft/vscode-remote-release
 		//   https://github.com/microsoft/vscode-remote-release/issues/9339#issuecomment-2227926973
