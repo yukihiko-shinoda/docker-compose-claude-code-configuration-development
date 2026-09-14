@@ -1,5 +1,4 @@
-FROM futureys/claude-code-python-development:20260906204000
-ARG VERSION_CSKLINT
+FROM futureys/claude-code-python-development:20260913152000
 # csklint: installs and runs the linters for Claude Code skills:
 # - skill-validator (pinned inside csklint; 0.1.0 pins 1.5.6, with SHA-256 verification)
 # - markdownlint-cli2 (installed via npm, unpinned -- latest at build time)

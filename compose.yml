@@ -20,7 +20,13 @@ services:
     security_opt:
       - seccomp:unconfined
     secrets:
-      - slack_webhook_url
+      # Mounted at /opt/claude-agent-secrets/, not the default /run/secrets/,
+      # so git-agent-credential-helper.sh (see Dockerfile) can read it from
+      # inside Claude Code's own Bash sandbox, which keeps /run/secrets
+      # denied but allow-lists /opt/claude-agent-secrets/*.
+      - source: git_auth_secret
+        target: /opt/claude-agent-secrets/git_auth_token
+      - source: slack_webhook_url
     volumes:
       - .:/workspace:cached
       - /workspace/.venv
@@ -32,5 +38,7 @@ services:
 volumes:
   uv-cache:
 secrets:
+  git_auth_secret:
+    environment: GIT_AUTH_TOKEN
   slack_webhook_url:
     environment: SLACK_WEBHOOK_URL
