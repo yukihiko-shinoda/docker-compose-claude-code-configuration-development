@@ -1,4 +1,4 @@
-FROM futureys/claude-code-python-development:20261019130000
+FROM futureys/claude-code-python-development:20261026205000
 ARG VERSION_CSKLINT \
     GCLOUD_VERSION \
 	GWS_VERSION \
